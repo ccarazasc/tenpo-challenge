@@ -4,20 +4,26 @@ import com.tenpo.challenge.domain.model.ApiCall;
 import com.tenpo.challenge.domain.model.Page;
 import com.tenpo.challenge.domain.port.in.ApiCallHistoryUseCase;
 import com.tenpo.challenge.infrastructure.exception.handler.GlobalExceptionHandler;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.ReactiveValueOperations;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @WebFluxTest(ApiCallHistoryController.class)
@@ -30,6 +36,20 @@ class ApiCallHistoryControllerTest {
 
     @MockBean
     private ApiCallHistoryUseCase historyUseCase;
+
+    @MockBean
+    private ReactiveStringRedisTemplate redisTemplate;
+
+    @MockBean
+    @SuppressWarnings("unchecked")
+    private ReactiveValueOperations<String, String> valueOps;
+
+    @BeforeEach
+    void setUpFilters() {
+        when(redisTemplate.opsForValue()).thenReturn(valueOps);
+        when(valueOps.increment(anyString())).thenReturn(Mono.just(1L));
+        when(redisTemplate.expire(anyString(), any(Duration.class))).thenReturn(Mono.just(true));
+    }
 
     @Test
     @DisplayName("GET /api/v1/history returns paginated results")

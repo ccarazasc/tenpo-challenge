@@ -1,5 +1,6 @@
 package com.tenpo.challenge.infrastructure.filter;
 
+import com.tenpo.challenge.domain.port.in.ApiCallHistoryUseCase;
 import com.tenpo.challenge.domain.port.in.CalculationUseCase;
 import com.tenpo.challenge.infrastructure.adapter.in.web.CalculationController;
 import com.tenpo.challenge.infrastructure.exception.handler.GlobalExceptionHandler;
@@ -31,6 +32,9 @@ class RateLimiterFilterTest {
 
     @MockBean
     private CalculationUseCase calculationUseCase;
+
+    @MockBean
+    private ApiCallHistoryUseCase apiCallHistoryUseCase;
 
     @MockBean
     private ReactiveStringRedisTemplate redisTemplate;

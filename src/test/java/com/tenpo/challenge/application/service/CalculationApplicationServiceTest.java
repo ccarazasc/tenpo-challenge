@@ -3,7 +3,6 @@ package com.tenpo.challenge.application.service;
 import com.tenpo.challenge.domain.port.out.PercentageCachePort;
 import com.tenpo.challenge.domain.port.out.PercentageServicePort;
 import com.tenpo.challenge.infrastructure.exception.PercentageServiceUnavailableException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,15 +28,11 @@ class CalculationApplicationServiceTest {
     @InjectMocks
     private CalculationApplicationService service;
 
-    @BeforeEach
-    void setUp() {
-        when(percentageCachePort.savePercentage(anyDouble())).thenReturn(Mono.empty());
-    }
-
     @Test
     @DisplayName("returns (num1+num2) + percentage% when external service is healthy")
     void calculate_happyPath() {
         when(percentageServicePort.getPercentage()).thenReturn(Mono.just(10.0));
+        when(percentageCachePort.savePercentage(anyDouble())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.calculate(5.0, 5.0))
                 .expectNext(11.0)
@@ -86,6 +81,7 @@ class CalculationApplicationServiceTest {
     @DisplayName("applies zero percent correctly")
     void calculate_zeroPercentage() {
         when(percentageServicePort.getPercentage()).thenReturn(Mono.just(0.0));
+        when(percentageCachePort.savePercentage(anyDouble())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.calculate(4.0, 6.0))
                 .expectNext(10.0)
@@ -96,6 +92,7 @@ class CalculationApplicationServiceTest {
     @DisplayName("applies 100% percentage (doubles the sum)")
     void calculate_hundredPercent() {
         when(percentageServicePort.getPercentage()).thenReturn(Mono.just(100.0));
+        when(percentageCachePort.savePercentage(anyDouble())).thenReturn(Mono.empty());
 
         StepVerifier.create(service.calculate(5.0, 5.0))
                 .expectNext(20.0)   // (5+5) + 100% = 20

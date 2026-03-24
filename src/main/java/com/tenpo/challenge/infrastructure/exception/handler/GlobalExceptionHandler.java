@@ -4,6 +4,7 @@ import com.tenpo.challenge.infrastructure.adapter.in.web.dto.ErrorResponse;
 import com.tenpo.challenge.infrastructure.exception.PercentageServiceUnavailableException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -41,11 +42,12 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ResponseStatusException.class)
-    public Mono<ErrorResponse> handleResponseStatus(ResponseStatusException ex) {
+    public Mono<ResponseEntity<ErrorResponse>> handleResponseStatus(ResponseStatusException ex) {
         HttpStatus status = HttpStatus.resolve(ex.getStatusCode().value());
         if (status == null) status = HttpStatus.INTERNAL_SERVER_ERROR;
         log.debug("ResponseStatusException: {}", ex.getMessage());
-        return Mono.just(error(status, ex.getReason() != null ? ex.getReason() : ex.getMessage()));
+        String message = ex.getReason() != null ? ex.getReason() : ex.getMessage();
+        return Mono.just(ResponseEntity.status(status).body(error(status, message)));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

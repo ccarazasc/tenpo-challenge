@@ -10,16 +10,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
 
-@Validated
 @RestController
 @RequestMapping("/api/v1")
 @RequiredArgsConstructor
@@ -45,9 +42,9 @@ public class CalculationController {
     })
     public Mono<CalculationResponse> calculate(
             @Parameter(description = "First number", required = true, example = "5")
-            @RequestParam @NotNull Double num1,
+            @RequestParam double num1,
             @Parameter(description = "Second number", required = true, example = "5")
-            @RequestParam @NotNull Double num2) {
+            @RequestParam double num2) {
 
         return calculationUseCase.calculate(num1, num2)
                 .map(result -> new CalculationResponse(num1, num2, result));

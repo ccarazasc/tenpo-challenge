@@ -1,0 +1,74 @@
+spring:
+  application:
+    name: tenpo-challenge
+
+  # ── Reactive R2DBC (PostgreSQL) ──────────────────────────────────────────
+  r2dbc:
+    url: ${R2DBC_URL:r2dbc:postgresql://localhost:5432/tenpo_db}
+    username: ${DB_USERNAME:tenpo}
+    password: ${DB_PASSWORD:tenpo}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 20
+      max-idle-time: 30m
+
+  # ── Flyway (uses JDBC for migrations, separate from R2DBC) ────────────────
+  flyway:
+    url: ${JDBC_URL:jdbc:postgresql://localhost:5432/tenpo_db}
+    username: ${DB_USERNAME:tenpo}
+    password: ${DB_PASSWORD:tenpo}
+
+  # ── Redis (Reactive) ──────────────────────────────────────────────────────
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 2000ms
+      connect-timeout: 1000ms
+
+  # ── Jackson ───────────────────────────────────────────────────────────────
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+# ── Application-specific settings ─────────────────────────────────────────
+app:
+  percentage-service:
+    base-url: ${PERCENTAGE_SERVICE_URL:http://localhost:8080}
+    endpoint: /api/v1/mock/percentage
+  rate-limit:
+    max-requests-per-minute: ${RATE_LIMIT_RPM:3}
+  cache:
+    percentage-ttl-minutes: ${CACHE_TTL_MINUTES:30}
+  mock:
+    percentage: ${MOCK_PERCENTAGE:10.0}
+    failure-enabled: ${MOCK_FAILURE_ENABLED:false}
+    fail-every-n-calls: ${MOCK_FAIL_EVERY_N:2}
+
+# ── Swagger / OpenAPI ─────────────────────────────────────────────────────
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: true
+    operations-sorter: alpha
+
+# ── Actuator ──────────────────────────────────────────────────────────────
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# ── Logging ───────────────────────────────────────────────────────────────
+logging:
+  level:
+    com.tenpo.challenge: INFO
+    org.springframework.r2dbc: WARN
+    io.r2dbc: WARN

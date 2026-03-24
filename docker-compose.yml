@@ -1,0 +1,92 @@
+# ─────────────────────────────────────────────────────────────────
+# Tenpo Challenge — full-stack compose
+#
+# Services:
+#   api      → Spring Boot WebFlux application
+#   postgres → PostgreSQL 16 (history store)
+#   redis    → Redis 7 (percentage cache + rate limiter)
+#
+# To start:   docker compose up --build
+# To scale:   docker compose up --build --scale api=3
+#   (Redis and Postgres are shared, so multi-replica works correctly)
+# ─────────────────────────────────────────────────────────────────
+
+services:
+
+  # ── Application ────────────────────────────────────────────────
+  api:
+    build: .
+    image: tenpo-challenge:latest
+    ports:
+      - "8080:8080"
+    environment:
+      R2DBC_URL:   r2dbc:postgresql://postgres:5432/tenpo_db
+      JDBC_URL:    jdbc:postgresql://postgres:5432/tenpo_db
+      DB_USERNAME: ${DB_USERNAME:-tenpo}
+      DB_PASSWORD: ${DB_PASSWORD:-tenpo_secret}
+      REDIS_HOST:  redis
+      REDIS_PORT:  6379
+      # Points the WebClient to itself so the mock endpoint works in Docker
+      PERCENTAGE_SERVICE_URL: http://api:8080
+      RATE_LIMIT_RPM:  3
+      CACHE_TTL_MINUTES: 30
+      MOCK_FAILURE_ENABLED: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - tenpo-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ── PostgreSQL ─────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB:       tenpo_db
+      POSTGRES_USER:     ${DB_USERNAME:-tenpo}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-tenpo_secret}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - tenpo-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tenpo} -d tenpo_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis ──────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - tenpo-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+# ── Shared volumes ─────────────────────────────────────────────
+volumes:
+  postgres_data:
+  redis_data:
+
+# ── Networks ───────────────────────────────────────────────────
+networks:
+  tenpo-net:
+    driver: bridge
